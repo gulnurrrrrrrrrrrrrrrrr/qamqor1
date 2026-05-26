@@ -62,30 +62,30 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
   const certId = "QCP-" + Date.now().toString().slice(-8);
   
   return (
-    <div className="bg-white text-gray-900 w-[210mm] h-[297mm] shadow-lg relative border-4 border-amber-500 flex flex-col mx-auto">
+    <div className="bg-white text-gray-900 w-[297mm] h-[210mm] shadow-lg relative border-4 border-amber-500 flex flex-col mx-auto">
       {/* Inner border */}
       <div className="absolute inset-1 border border-amber-500/50 pointer-events-none" />
-      
+
       {/* Watermark logo */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <span className="text-[200px] font-serif font-bold text-amber-500 opacity-5">Q</span>
       </div>
-      
-      {/* Header - fixed at top */}
-      <div className="text-center pt-12 pb-6 px-12">
+
+      {/* Header - fixed at top with proper padding */}
+      <div className="text-center pt-16 pb-4 px-16">
         <h1 className="text-xl font-serif font-bold text-gray-700 tracking-wide">CERTIFICATE OF VERIFICATION</h1>
       </div>
-      
+
       {/* Main content - centered in remaining space */}
-      <div className="flex-1 flex items-center justify-center px-12">
-        <div className="flex flex-col items-center justify-center text-center">
+      <div className="flex-1 flex items-center justify-center px-16">
+        <div className="flex flex-col items-center justify-center text-center max-w-3xl">
           {/* Big name centered */}
-          <div className="py-6">
+          <div className="py-4">
             <h2 className="text-5xl font-serif font-bold text-gray-900">{fullName}</h2>
           </div>
-          
+
           {/* Subtitle */}
-          <div className="py-4">
+          <div className="py-3">
             <p className="text-sm text-gray-600 font-serif leading-relaxed">
               This certifies that the above-named individual has demonstrated verified
             </p>
@@ -93,11 +93,11 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
               professional competency through the Qamqor Social Capital Passport.
             </p>
           </div>
-          
+
           {/* Skills (short bullets) */}
           {skills.length > 0 && (
-            <div className="py-4">
-              <h3 className="text-sm font-serif font-semibold text-gray-700 mb-3">Verified Skills</h3>
+            <div className="py-3">
+              <h3 className="text-sm font-serif font-semibold text-gray-700 mb-2">Verified Skills</h3>
               <p className="text-sm text-gray-600 font-serif">
                 {skills
                   .map(s => s.replace(/•/g, "").trim())
@@ -107,12 +107,12 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
               </p>
             </div>
           )}
-          
+
           {/* Experience (short bullets) */}
           {experience.length > 0 && (
-            <div className="py-4">
-              <h3 className="text-sm font-serif font-semibold text-gray-700 mb-3">Key Experience</h3>
-              <div className="space-y-2">
+            <div className="py-3">
+              <h3 className="text-sm font-serif font-semibold text-gray-700 mb-2">Key Experience</h3>
+              <div className="space-y-1">
                 {experience.slice(0, 3).map((exp, idx) => {
                   const cleanExp = exp.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
                   if (cleanExp && cleanExp.length < 80) {
@@ -129,13 +129,13 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
           )}
         </div>
       </div>
-      
-      {/* Footer - fixed at bottom */}
-      <div className="px-12 pb-12 pt-6 flex justify-between items-end">
+
+      {/* Footer - fixed at bottom with proper spacing */}
+      <div className="px-16 pb-16 pt-4 flex justify-between items-end">
         <div>
           <p className="text-xs text-gray-500 font-serif">Certificate ID: {certId}</p>
           <p className="text-xs text-gray-500 font-serif mt-1">Date: {today}</p>
-          <div className="w-40 h-px bg-amber-500 mt-6" />
+          <div className="w-40 h-px bg-amber-500 mt-4" />
           <p className="text-xs text-gray-600 font-serif mt-1">Authorized Signature</p>
         </div>
         <div className="text-right">

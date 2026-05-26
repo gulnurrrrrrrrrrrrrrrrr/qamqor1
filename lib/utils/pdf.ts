@@ -1,11 +1,11 @@
 import { jsPDF } from "jspdf";
 
-const MARGIN = 50;
+const MARGIN = 60;
 const TITLE_SIZE = 18;
 const NAME_SIZE = 28;
 const SUBTITLE_SIZE = 11;
 const BODY_SIZE = 10;
-const LINE_HEIGHT = 16;
+const LINE_HEIGHT = 14;
 
 /**
  * Renders CV into a premium certificate PDF.
@@ -40,9 +40,9 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   const skills = sections.skills || [];
 
   // Calculate content height
-  let contentHeight = 35 + 25 + LINE_HEIGHT * 2 + 35; // Title + name + subtitle + spacing
+  let contentHeight = 30 + 20 + LINE_HEIGHT * 2 + 25; // Title + name + subtitle + spacing
   if (skills.length > 0) {
-    contentHeight += LINE_HEIGHT + 20; // Skills header + spacing
+    contentHeight += LINE_HEIGHT + 15; // Skills header + spacing
     const skillText = skills
       .map(s => s.replace(/•/g, "").trim())
       .filter(s => s)
@@ -61,7 +61,7 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
 
   // Calculate vertical centering
   const headerHeight = MARGIN;
-  const footerHeight = 80;
+  const footerHeight = 70;
   const availableHeight = pageHeight - headerHeight - footerHeight - MARGIN * 2;
   const startY = headerHeight + (availableHeight - contentHeight) / 2;
 
@@ -72,14 +72,14 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   doc.setFontSize(TITLE_SIZE);
   doc.setTextColor(51, 51, 51);
   doc.text("CERTIFICATE OF VERIFICATION", centerX, y, { align: "center" });
-  y += 35;
+  y += 30;
 
   // Big name centered
   doc.setFont("times", "bold");
   doc.setFontSize(NAME_SIZE);
   doc.setTextColor(0, 0, 0);
   doc.text(fullName, centerX, y, { align: "center" });
-  y += 25;
+  y += 20;
 
   // Subtitle
   doc.setFont("times", "normal");
@@ -88,7 +88,7 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   doc.text("This certifies that the above-named individual has demonstrated verified", centerX, y, { align: "center" });
   y += LINE_HEIGHT;
   doc.text("professional competency through the Qamqor Social Capital Passport.", centerX, y, { align: "center" });
-  y += 35;
+  y += 25;
 
   // Skills (short bullets)
   if (skills.length > 0) {
@@ -110,7 +110,7 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
       doc.text(line, centerX, y, { align: "center" });
       y += LINE_HEIGHT;
     }
-    y += 20;
+    y += 15;
   }
 
   // Experience (short bullets)
@@ -133,7 +133,7 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   }
 
   // Footer section
-  const footerY = pageHeight - MARGIN - 80;
+  const footerY = pageHeight - MARGIN - 70;
 
   // Certificate ID - centered
   const certId = "QCP-" + Date.now().toString().slice(-8);
@@ -144,26 +144,26 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
 
   // Date - centered
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-  doc.text(`Date: ${today}`, centerX, footerY + 20, { align: "center" });
+  doc.text(`Date: ${today}`, centerX, footerY + 18, { align: "center" });
 
   // Signature line - centered
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(1);
-  doc.line(centerX - 80, footerY + 55, centerX + 80, footerY + 55);
+  doc.line(centerX - 80, footerY + 45, centerX + 80, footerY + 45);
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
-  doc.text("Authorized Signature", centerX, footerY + 68, { align: "center" });
+  doc.text("Authorized Signature", centerX, footerY + 58, { align: "center" });
 
-  // QR Code (bottom right)
-  const qrSize = 50;
-  const qrX = pageWidth - MARGIN - qrSize;
+  // QR Code (bottom right, near footer content)
+  const qrSize = 48;
+  const qrX = pageWidth - MARGIN - qrSize - 10;
   const qrY = footerY - 5;
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(1);
   doc.rect(qrX, qrY, qrSize, qrSize);
   doc.setFontSize(7);
   doc.setTextColor(128, 128, 128);
-  doc.text("Scan to verify", qrX + qrSize / 2, qrY + qrSize + 12, { align: "center" });
+  doc.text("Scan to verify", qrX + qrSize / 2, qrY + qrSize + 10, { align: "center" });
 
   doc.save(filename);
 }
