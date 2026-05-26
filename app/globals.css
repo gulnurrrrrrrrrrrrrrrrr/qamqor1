@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-ink text-ink-50 antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  ::selection { @apply bg-accent/30 text-white; }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+  .animate-fade-up-delay {
+    animation: fadeUp 0.8s ease-out 0.15s forwards;
+    opacity: 0;
+  }
+  .animate-in-view {
+    animation: fadeUp 0.5s ease-out forwards;
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-up,
+    .animate-fade-up-delay,
+    .animate-in-view {
+      animation: none;
+      opacity: 1;
+    }
+  }
+  .animate-modal-in {
+    animation: modalIn 0.25s ease-out forwards;
+  }
+  .animate-overlay-in {
+    animation: overlayIn 0.2s ease-out forwards;
+  }
+  .glass {
+    @apply border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl;
+  }
+  .glass-raised {
+    @apply border border-white/[0.08] bg-surface-raised/80 backdrop-blur-xl;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-ink-100 to-ink-200 bg-clip-text text-transparent;
+  }
+  .accent-gradient {
+    @apply bg-gradient-to-r from-accent-light via-accent to-accent-dark bg-clip-text text-transparent;
+  }
+  .glow-ring {
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 40px -12px rgba(99,102,241,0.4);
+  }
+}

@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  VOLUNTEER
+  ORGANIZATION
+  ADMIN
+}
+
+enum EventMode {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+enum VerificationType {
+  QR
+  GEO
+  HYBRID
+  MANUAL
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+  APPROVED
+  SCREENING
+  FLAGGED
+}
+
+enum FraudSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum FraudStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String
+  name                String
+  role                Role
+  trustScore          Int       @default(65)
+  leadershipIndex     Int       @default(50)
+  impactHours         Int       @default(0)
+  admissionsReadiness Int       @default(50)
+  suspended           Boolean   @default(false)
+  skills              Json      @default("[]")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  organization  Organization?
+  applications  Application[]
+  notifications Notification[]
+  certificates  Certificate[]
+  timeline      TimelineEntry[]
+  bookmarks     Bookmark[]
+  sessions      Session[]
+  fraudReports  FraudReport[] @relation("ReportedUser")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  logo        String
+  description String?
+  verified    Boolean  @default(false)
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events      Event[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  fraudReports FraudReport[] @relation("ReportedOrg")
+}
+
+model Event {
+  id              String           @id @default(cuid())
+  organizationId  String
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title           String
+  location        String
+  mode            EventMode
+  verification    VerificationType
+  trustRequired   Int
+  eventDate       DateTime
+  hours           Int
+  maxParticipants Int
+  featured        Boolean          @default(false)
+  skills          String[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  applications Application[]
+  bookmarks    Bookmark[]
+  timeline     TimelineEntry[]
+
+  @@index([organizationId])
+  @@index([featured])
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  status    ApplicationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Certificate {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  issuer    String
+  issuedAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model TimelineEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String?
+  event     Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  title     String
+  orgName   String
+  entryDate DateTime
+  hours     Int
+  verified  Boolean  @default(true)
+
+  @@index([userId])
+}
+
+model Bookmark {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, eventId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model FraudReport {
+  id             String        @id @default(cuid())
+  type           String
+  description    String?
+  severity       FraudSeverity @default(MEDIUM)
+  status         FraudStatus   @default(OPEN)
+  reportedUserId String?
+  reportedUser   User?         @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  organizationId String?
+  organization   Organization? @relation("ReportedOrg", fields: [organizationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+}
+
+model PlatformSetting {
+  key   String @id
+  value String
+}
