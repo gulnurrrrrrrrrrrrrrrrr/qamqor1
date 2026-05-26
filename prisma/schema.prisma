@@ -71,6 +71,8 @@ model User {
   bookmarks     Bookmark[]
   sessions      Session[]
   fraudReports  FraudReport[] @relation("ReportedUser")
+  attendanceRecords AttendanceRecord[]
+  aiGenerations     AiGeneration[]
 }
 
 model Organization {
@@ -108,9 +110,48 @@ model Event {
   applications Application[]
   bookmarks    Bookmark[]
   timeline     TimelineEntry[]
+  attendance   EventAttendance?
+  checkIns     AttendanceRecord[]
 
   @@index([organizationId])
   @@index([featured])
+}
+
+model EventAttendance {
+  id              String   @id @default(cuid())
+  eventId         String   @unique
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  qrToken         String   @unique @default(cuid())
+  geoLatitude     Float?
+  geoLongitude    Float?
+  geoRadiusMeters Int      @default(100)
+  updatedAt       DateTime @updatedAt
+}
+
+model AttendanceRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  method    String
+  latitude  Float?
+  longitude Float?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+}
+
+model AiGeneration {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId, type])
 }
 
 model Application {

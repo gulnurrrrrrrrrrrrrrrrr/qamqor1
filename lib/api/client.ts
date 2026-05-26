@@ -24,10 +24,16 @@ export const api = {
     const q = new URLSearchParams(params).toString();
     return request<{ events: Event[] }>(`/api/events${q ? `?${q}` : ""}`);
   },
+  createEvent: (body: Record<string, unknown>) =>
+    request<{ event: Event }>("/api/events", { method: "POST", body: JSON.stringify(body) }),
+  updateEvent: (id: string, body: Record<string, unknown>) =>
+    request<{ event: Event }>(`/api/events/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteEvent: (id: string) => request<{ ok: boolean }>(`/api/events/${id}`, { method: "DELETE" }),
+
   apply: (eventId: string) =>
     request<{ application: unknown }>("/api/applications", { method: "POST", body: JSON.stringify({ eventId }) }),
 
-  applications: () => request<{ applications: { id: string; event: string; org: string; date: string; status: string }[] }>("/api/applications"),
+  applications: () => request<{ applications: { id: string; event: string; org: string; date: string; status: string; eventId: string }[] }>("/api/applications"),
   updateApplication: (id: string, status: string) =>
     request<{ application: unknown }>(`/api/applications/${id}`, { method: "PATCH", body: JSON.stringify({ status: status.toUpperCase() }) }),
 
@@ -40,6 +46,8 @@ export const api = {
     }>("/api/volunteer/dashboard"),
 
   profile: () => request<{ name: string; email: string; skills: { name: string; value: number }[] }>("/api/volunteer/profile"),
+  updateProfile: (body: { name?: string; skills?: { name: string; value: number }[] }) =>
+    request<{ ok: boolean }>("/api/volunteer/profile", { method: "PATCH", body: JSON.stringify(body) }),
 
   notifications: () => request<{ notifications: { id: string; title: string; body: string; time: string }[] }>("/api/notifications"),
 
@@ -59,14 +67,48 @@ export const api = {
     }>("/api/organization/analytics"),
 
   orgProfile: () => request<{ organization: { id: string; name: string; logo: string; description: string | null; verified: boolean } }>("/api/organization/profile"),
+  updateOrgProfile: (body: { name?: string; description?: string; logo?: string }) =>
+    request<{ organization: unknown }>("/api/organization/profile", { method: "PATCH", body: JSON.stringify(body) }),
 
   orgApplications: () =>
     request<{ applications: { id: string; name: string; role: string; trust: number; status: string }[] }>("/api/applications"),
+
+  generateQr: (eventId?: string) =>
+    request<{ eventId: string; eventTitle: string; qrToken: string; checkInUrl: string }>("/api/attendance/qr", {
+      method: "POST",
+      body: JSON.stringify(eventId ? { eventId } : {}),
+    }),
+  configureGeo: (body: { eventId: string; latitude: number; longitude: number; radiusMeters?: number }) =>
+    request<{ eventId: string; eventTitle: string; latitude: number; longitude: number; radiusMeters: number }>("/api/attendance/geo", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  attendanceReview: () =>
+    request<{ pending: { id: string; volunteer: string; event: string; status: string; trust: number }[]; count: number }>("/api/attendance/review"),
+
+  checkInQr: (qrToken: string) =>
+    request<{ eventTitle: string; org: string; method: string; checkedInAt: string }>("/api/attendance/check-in/qr", {
+      method: "POST",
+      body: JSON.stringify({ qrToken }),
+    }),
+  checkInGeo: (eventId: string, latitude: number, longitude: number) =>
+    request<{ eventTitle: string; org: string; method: string; distanceMeters?: number; checkedInAt: string }>("/api/attendance/check-in/geo", {
+      method: "POST",
+      body: JSON.stringify({ eventId, latitude, longitude }),
+    }),
+
+  generateCv: () => request<{ content: string }>("/api/ai/cv", { method: "POST" }),
+  generateMotivationLetter: (program?: string) =>
+    request<{ content: string }>("/api/ai/motivation-letter", {
+      method: "POST",
+      body: JSON.stringify(program ? { program } : {}),
+    }),
 
   adminStats: () => request<{ stats: { users: number; organizations: number; events: number; fraudReports: number; suspended: number } }>("/api/admin/stats"),
   adminUsers: () => request<{ users: { id: string; name: string; role: string; status: string }[] }>("/api/admin/users"),
   adminOrgs: () => request<{ organizations: { id: string; name: string; status: string }[] }>("/api/admin/organizations"),
   adminFraud: () => request<{ reports: { id: string; type: string; user: string; severity: string }[] }>("/api/admin/fraud"),
+  investigateFraud: (id: string) => request<{ report: { id: string; status: string } }>(`/api/admin/fraud/${id}`, { method: "PATCH" }),
   suspendUser: (userId: string, suspended: boolean) =>
     request<{ ok: boolean }>("/api/admin/users", { method: "PATCH", body: JSON.stringify({ userId, suspended }) }),
   verifyOrg: (organizationId: string) =>

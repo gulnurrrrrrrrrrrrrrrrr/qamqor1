@@ -32,7 +32,8 @@ export async function PATCH(req: Request, { params }: Params) {
       ...(body.title && { title: body.title }),
       ...(body.location && { location: body.location }),
       ...(body.mode && { mode: body.mode.toUpperCase() }),
-      ...(body.hours && { hours: Number(body.hours) }),
+      ...(body.hours != null && { hours: Number(body.hours) }),
+      ...(body.featured != null && { featured: Boolean(body.featured) }),
     });
     return jsonOk({ event });
   } catch (err) {
