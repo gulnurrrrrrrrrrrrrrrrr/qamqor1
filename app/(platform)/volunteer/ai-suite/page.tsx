@@ -7,6 +7,7 @@ import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { Can } from "@/components/auth/Can";
 import { ActionFeedback, ResultBox } from "@/components/ui/ActionFeedback";
+import { CvPreview } from "@/components/volunteer/CvPreview";
 import { api } from "@/lib/api/client";
 import { downloadCvPdf } from "@/lib/utils/pdf";
 
@@ -105,7 +106,7 @@ export default function AISuitePage() {
               )}
             </div>
             <ActionFeedback loading={cvLoading} error={cvError} success={cvContent && !cvLoading ? "CV generated successfully" : null} />
-            <ResultBox content={cvContent} label="Your CV" />
+            {cvContent && <CvPreview content={cvContent} />}
           </Panel>
         </Can>
         <Can permission="ai.motivation">
