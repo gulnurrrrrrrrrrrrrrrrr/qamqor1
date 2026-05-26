@@ -36,9 +36,14 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const patch: Parameters<typeof updateEvent>[1] = {};
     if (body.title) patch.title = String(body.title);
+    if (body.description !== undefined) patch.description = body.description ? String(body.description) : null;
     if (body.location) patch.location = String(body.location);
     if (body.mode) patch.mode = String(body.mode).toUpperCase() as "ONLINE" | "OFFLINE" | "HYBRID";
+    if (body.verification) patch.verification = String(body.verification).toUpperCase() as "QR" | "GEO" | "HYBRID" | "MANUAL";
+    if (body.eventDate) patch.eventDate = new Date(String(body.eventDate));
     if (body.hours != null) patch.hours = Number(body.hours);
+    if (body.maxParticipants != null) patch.maxParticipants = Number(body.maxParticipants);
+    if (body.trustRequired != null) patch.trustRequired = Number(body.trustRequired);
     if (body.featured != null) patch.featured = Boolean(body.featured);
 
     const event = await updateEvent(params.id, patch);

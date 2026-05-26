@@ -34,6 +34,7 @@ export async function POST(req: Request) {
     const event = await createEvent({
       organizationId: user.organizationId,
       title: String(body.title ?? "Untitled Event"),
+      description: typeof body.description === "string" ? body.description : null,
       location: String(body.location ?? "TBD"),
       mode: (typeof body.mode === "string" ? body.mode.toUpperCase() : "OFFLINE") as "ONLINE" | "OFFLINE" | "HYBRID",
       verification: (typeof body.verification === "string" ? body.verification.toUpperCase() : "QR") as "QR" | "GEO" | "HYBRID" | "MANUAL",

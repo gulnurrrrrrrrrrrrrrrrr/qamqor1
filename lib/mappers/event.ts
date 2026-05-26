@@ -27,6 +27,8 @@ export function toAppEvent(event: EventWithOrg): AppEvent {
   return {
     id: event.id,
     title: event.title,
+    description: event.description ?? null,
+    eventDate: event.eventDate.toISOString(),
     org: event.organization.name,
     orgLogo: event.organization.logo,
     location: event.location,

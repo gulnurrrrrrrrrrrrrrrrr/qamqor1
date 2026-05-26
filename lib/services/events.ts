@@ -68,6 +68,7 @@ export async function getEventById(id: string) {
 export interface CreateEventInput {
   organizationId: string;
   title: string;
+  description?: string | null;
   location: string;
   mode: EventMode;
   verification: VerificationType;

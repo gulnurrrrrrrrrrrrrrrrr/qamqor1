@@ -4,6 +4,8 @@ export type EventMode = "online" | "offline" | "hybrid";
 export interface Event {
   id: string;
   title: string;
+  description?: string | null;
+  eventDate?: string;
   org: string;
   orgLogo: string;
   location: string;
