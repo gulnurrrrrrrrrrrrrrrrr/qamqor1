@@ -55,99 +55,79 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
   const sections = parseCvContent(content);
   
   const fullName = sections.fullName || "";
-  const email = sections.email || "";
-  const summary = sections.summary || [];
   const experience = sections.experience || [];
   const skills = sections.skills || [];
-  const certifications = sections.certifications || [];
   
-  const summaryText = summary.join(" ").substring(0, 200);
+  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   
   return (
-    <div className="bg-white text-gray-900 max-w-3xl mx-auto shadow-lg border border-gray-200">
-      {/* Title - Centered */}
-      <div className="text-center py-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">Certificate of Professional Profile</h1>
+    <div className="bg-white text-gray-900 max-w-3xl mx-auto shadow-lg border border-gray-200 relative">
+      {/* Watermark logo */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <span className="text-[200px] font-bold text-gray-100 opacity-5">Q</span>
       </div>
       
-      {/* Name + Email - Centered */}
-      <div className="text-center py-6 border-b border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900">{fullName}</h2>
-        <p className="text-gray-600 mt-2">{email}</p>
+      {/* Top branding - Website name + logo */}
+      <div className="text-center pt-8 pb-4 border-b border-gray-200">
+        <h1 className="text-lg font-bold text-gray-700">Qamqor AI</h1>
+        <p className="text-xs text-gray-500 mt-1">Social Capital Passport</p>
       </div>
       
-      {/* Summary (2-3 lines max) */}
-      {summary.length > 0 && (
-        <div className="px-8 py-4 border-b border-gray-200">
-          <h3 className="text-sm font-bold text-gray-900 mb-2">Summary</h3>
-          <p className="text-sm text-gray-700 leading-relaxed">{summaryText}...</p>
-        </div>
-      )}
+      {/* Decorative line */}
+      <div className="h-px bg-gray-200 mx-8" />
       
-      {/* Experience (bullets only) */}
-      {experience.length > 0 && (
-        <div className="px-8 py-4 border-b border-gray-200">
-          <h3 className="text-sm font-bold text-gray-900 mb-2">Experience</h3>
-          <ul className="space-y-1">
-            {experience.slice(0, 4).map((exp, idx) => {
-              const cleanExp = exp.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
-              if (cleanExp && cleanExp.length < 100) {
-                return (
-                  <li key={idx} className="text-sm text-gray-700 flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>{cleanExp}</span>
-                  </li>
-                );
-              }
-              return null;
-            })}
-          </ul>
-        </div>
-      )}
+      {/* Big name centered */}
+      <div className="text-center py-8">
+        <h2 className="text-4xl font-bold text-gray-900">{fullName}</h2>
+        <p className="text-sm text-gray-500 mt-3">Verified Professional Profile</p>
+      </div>
       
-      {/* Skills */}
+      {/* Skills (short bullets) */}
       {skills.length > 0 && (
-        <div className="px-8 py-4 border-b border-gray-200">
-          <h3 className="text-sm font-bold text-gray-900 mb-2">Skills</h3>
-          <div className="text-sm text-gray-700">
+        <div className="text-center py-4 px-8">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Skills</h3>
+          <p className="text-sm text-gray-600">
             {skills
               .map(s => s.replace(/•/g, "").trim())
               .filter(s => s)
-              .slice(0, 8)
+              .slice(0, 6)
               .join(" • ")}
-          </div>
+          </p>
         </div>
       )}
       
-      {/* Certifications */}
-      {certifications.length > 0 && (
-        <div className="px-8 py-4 border-b border-gray-200">
-          <h3 className="text-sm font-bold text-gray-900 mb-2">Certifications</h3>
-          <ul className="space-y-1">
-            {certifications.slice(0, 4).map((cert, idx) => {
-              const cleanCert = cert.replace(/•/g, "").trim();
-              if (cleanCert && cleanCert.length < 80) {
+      {/* Experience (short bullets) */}
+      {experience.length > 0 && (
+        <div className="text-center py-4 px-8">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Experience</h3>
+          <div className="space-y-2">
+            {experience.slice(0, 3).map((exp, idx) => {
+              const cleanExp = exp.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
+              if (cleanExp && cleanExp.length < 80) {
                 return (
-                  <li key={idx} className="text-sm text-gray-700 flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>{cleanCert}</span>
-                  </li>
+                  <p key={idx} className="text-sm text-gray-600">
+                    • {cleanExp}
+                  </p>
                 );
               }
               return null;
             })}
-          </ul>
+          </div>
         </div>
       )}
       
-      {/* Footer with QR placeholder */}
-      <div className="px-8 py-4 bg-gray-50 flex justify-between items-center">
-        <p className="text-xs text-gray-500">Generated by Qamqor AI</p>
-        <div className="flex items-center gap-2">
-          <div className="w-12 h-12 border border-gray-300 flex items-center justify-center bg-white">
+      {/* Footer section */}
+      <div className="mt-8 px-8 pb-8 flex justify-between items-end">
+        <div>
+          <p className="text-xs text-gray-500">Date: {today}</p>
+          <div className="w-32 h-px bg-gray-300 mt-6" />
+          <p className="text-xs text-gray-500 mt-1">Authorized Signature</p>
+        </div>
+        <div className="text-right">
+          <div className="w-12 h-12 border border-gray-300 flex items-center justify-center bg-white mb-1">
             <span className="text-xs text-gray-400">QR</span>
           </div>
-          <span className="text-xs text-gray-500">Scan to verify</span>
+          <p className="text-xs text-gray-400">Scan to verify</p>
         </div>
       </div>
     </div>

@@ -1,15 +1,16 @@
 import { jsPDF } from "jspdf";
 
-const MARGIN = 40;
-const TITLE_SIZE = 16;
-const SECTION_SIZE = 13;
+const MARGIN = 50;
+const TITLE_SIZE = 14;
+const NAME_SIZE = 24;
+const SUBTITLE_SIZE = 12;
 const BODY_SIZE = 11;
-const LINE_HEIGHT = 16;
+const LINE_HEIGHT = 18;
 
 /**
- * Renders CV into a clean 1-page PDF with professional layout.
+ * Renders CV into an official certificate PDF.
  */
-export function downloadCvPdf(content: string, filename = "cv.pdf") {
+export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -18,113 +19,120 @@ export function downloadCvPdf(content: string, filename = "cv.pdf") {
 
   let y = MARGIN;
 
-  // Title - Centered
+  // Watermark logo (low opacity)
+  doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(80);
+  doc.text("Q", centerX, pageHeight / 2 + 50, { align: "center" });
+  doc.setGState(new (doc as any).GState({ opacity: 1 }));
+
+  // Top branding - Website name + logo
   doc.setFont("helvetica", "bold");
   doc.setFontSize(TITLE_SIZE);
-  doc.text("Certificate of Professional Profile", centerX, y, { align: "center" });
-  y += 30;
+  doc.setTextColor(51, 51, 51);
+  doc.text("Qamqor AI", centerX, y, { align: "center" });
+  y += 20;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(128, 128, 128);
+  doc.text("Social Capital Passport", centerX, y, { align: "center" });
+  y += 35;
+
+  // Decorative line
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(1);
+  doc.line(MARGIN, y, pageWidth - MARGIN, y);
+  y += 40;
 
   // Parse content for sections
   const sections = parseCvContent(content);
   const fullName = sections.fullName || "";
-  const email = sections.email || "";
-  const summary = sections.summary || [];
   const experience = sections.experience || [];
   const skills = sections.skills || [];
-  const certifications = sections.certifications || [];
 
-  // Name + Email - Centered
+  // Big name centered
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(NAME_SIZE);
+  doc.setTextColor(0, 0, 0);
   doc.text(fullName, centerX, y, { align: "center" });
-  y += 18;
+  y += 30;
+
+  // Subtitle
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.text(email, centerX, y, { align: "center" });
-  y += 25;
+  doc.setFontSize(SUBTITLE_SIZE);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Verified Professional Profile", centerX, y, { align: "center" });
+  y += 40;
 
-  // Summary (2-3 lines max)
-  if (summary.length > 0) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(SECTION_SIZE);
-    doc.text("Summary", MARGIN, y);
-    y += LINE_HEIGHT;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(BODY_SIZE);
-    const summaryText = summary.join(" ").substring(0, 200);
-    const lines = doc.splitTextToSize(summaryText, maxWidth);
-    for (const line of lines.slice(0, 3)) {
-      doc.text(line, MARGIN, y);
-      y += LINE_HEIGHT;
-    }
-    y += 10;
-  }
-
-  // Experience (bullets only)
-  if (experience.length > 0) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(SECTION_SIZE);
-    doc.text("Experience", MARGIN, y);
-    y += LINE_HEIGHT;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(BODY_SIZE);
-    for (const exp of experience.slice(0, 4)) {
-      const cleanExp = exp.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
-      if (cleanExp && cleanExp.length < 100) {
-        doc.text(`• ${cleanExp}`, MARGIN, y);
-        y += LINE_HEIGHT;
-      }
-    }
-    y += 10;
-  }
-
-  // Skills
+  // Skills (short bullets)
   if (skills.length > 0) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(SECTION_SIZE);
-    doc.text("Skills", MARGIN, y);
+    doc.setFontSize(12);
+    doc.setTextColor(51, 51, 51);
+    doc.text("Skills", centerX, y, { align: "center" });
     y += LINE_HEIGHT;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(BODY_SIZE);
+    doc.setTextColor(80, 80, 80);
     const skillText = skills
       .map(s => s.replace(/•/g, "").trim())
       .filter(s => s)
-      .slice(0, 8)
+      .slice(0, 6)
       .join(" • ");
     const lines = doc.splitTextToSize(skillText, maxWidth);
     for (const line of lines) {
-      doc.text(line, MARGIN, y);
+      doc.text(line, centerX, y, { align: "center" });
       y += LINE_HEIGHT;
     }
-    y += 10;
+    y += 25;
   }
 
-  // Certifications
-  if (certifications.length > 0) {
+  // Experience (short bullets)
+  if (experience.length > 0) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(SECTION_SIZE);
-    doc.text("Certifications", MARGIN, y);
+    doc.setFontSize(12);
+    doc.setTextColor(51, 51, 51);
+    doc.text("Experience", centerX, y, { align: "center" });
     y += LINE_HEIGHT;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(BODY_SIZE);
-    for (const cert of certifications.slice(0, 4)) {
-      const cleanCert = cert.replace(/•/g, "").trim();
-      if (cleanCert && cleanCert.length < 80) {
-        doc.text(`• ${cleanCert}`, MARGIN, y);
+    doc.setTextColor(80, 80, 80);
+    for (const exp of experience.slice(0, 3)) {
+      const cleanExp = exp.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
+      if (cleanExp && cleanExp.length < 80) {
+        doc.text(`• ${cleanExp}`, centerX, y, { align: "center" });
         y += LINE_HEIGHT;
       }
     }
   }
 
-  // QR Code placeholder (bottom right)
-  const qrSize = 50;
+  // Footer section
+  const footerY = pageHeight - MARGIN - 60;
+
+  // Date
+  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(128, 128, 128);
+  doc.text(`Date: ${today}`, MARGIN, footerY);
+
+  // Signature line
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(MARGIN, footerY + 30, MARGIN + 150, footerY + 30);
+  doc.setFontSize(9);
+  doc.text("Authorized Signature", MARGIN + 75, footerY + 42, { align: "center" });
+
+  // QR Code (bottom right)
+  const qrSize = 45;
   const qrX = pageWidth - MARGIN - qrSize;
-  const qrY = pageHeight - MARGIN - qrSize;
+  const qrY = footerY - 10;
   doc.setDrawColor(200);
   doc.setLineWidth(0.5);
   doc.rect(qrX, qrY, qrSize, qrSize);
-  doc.setFontSize(8);
-  doc.text("Scan to verify", qrX + qrSize / 2, qrY + qrSize + 12, { align: "center" });
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  doc.text("Scan to verify", qrX + qrSize / 2, qrY + qrSize + 10, { align: "center" });
 
   doc.save(filename);
 }
