@@ -59,34 +59,43 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
   const skills = sections.skills || [];
   
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const certId = "QCP-" + Date.now().toString().slice(-8);
   
   return (
-    <div className="bg-white text-gray-900 max-w-3xl mx-auto shadow-lg border border-gray-200 relative">
+    <div className="bg-white text-gray-900 max-w-3xl mx-auto shadow-lg relative border-4 border-amber-500">
+      {/* Inner border */}
+      <div className="absolute inset-1 border border-amber-500/50 pointer-events-none" />
+      
       {/* Watermark logo */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <span className="text-[200px] font-bold text-gray-100 opacity-5">Q</span>
+        <span className="text-[200px] font-serif font-bold text-amber-500 opacity-5">Q</span>
       </div>
       
-      {/* Top branding - Website name + logo */}
-      <div className="text-center pt-8 pb-4 border-b border-gray-200">
-        <h1 className="text-lg font-bold text-gray-700">Qamqor AI</h1>
-        <p className="text-xs text-gray-500 mt-1">Social Capital Passport</p>
+      {/* Title */}
+      <div className="text-center pt-10 pb-4">
+        <h1 className="text-xl font-serif font-bold text-gray-700 tracking-wide">CERTIFICATE OF VERIFICATION</h1>
       </div>
-      
-      {/* Decorative line */}
-      <div className="h-px bg-gray-200 mx-8" />
       
       {/* Big name centered */}
-      <div className="text-center py-8">
-        <h2 className="text-4xl font-bold text-gray-900">{fullName}</h2>
-        <p className="text-sm text-gray-500 mt-3">Verified Professional Profile</p>
+      <div className="text-center py-6">
+        <h2 className="text-5xl font-serif font-bold text-gray-900">{fullName}</h2>
+      </div>
+      
+      {/* Subtitle */}
+      <div className="text-center py-4 px-12">
+        <p className="text-sm text-gray-600 font-serif leading-relaxed">
+          This certifies that the above-named individual has demonstrated verified
+        </p>
+        <p className="text-sm text-gray-600 font-serif leading-relaxed">
+          professional competency through the Qamqor Social Capital Passport.
+        </p>
       </div>
       
       {/* Skills (short bullets) */}
       {skills.length > 0 && (
-        <div className="text-center py-4 px-8">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Skills</h3>
-          <p className="text-sm text-gray-600">
+        <div className="text-center py-4 px-12">
+          <h3 className="text-sm font-serif font-semibold text-gray-700 mb-3">Verified Skills</h3>
+          <p className="text-sm text-gray-600 font-serif">
             {skills
               .map(s => s.replace(/•/g, "").trim())
               .filter(s => s)
@@ -98,14 +107,14 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
       
       {/* Experience (short bullets) */}
       {experience.length > 0 && (
-        <div className="text-center py-4 px-8">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Experience</h3>
+        <div className="text-center py-4 px-12">
+          <h3 className="text-sm font-serif font-semibold text-gray-700 mb-3">Key Experience</h3>
           <div className="space-y-2">
             {experience.slice(0, 3).map((exp, idx) => {
               const cleanExp = exp.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
               if (cleanExp && cleanExp.length < 80) {
                 return (
-                  <p key={idx} className="text-sm text-gray-600">
+                  <p key={idx} className="text-sm text-gray-600 font-serif">
                     • {cleanExp}
                   </p>
                 );
@@ -117,17 +126,18 @@ export const CvPreview = memo(function CvPreview({ content }: CvPreviewProps) {
       )}
       
       {/* Footer section */}
-      <div className="mt-8 px-8 pb-8 flex justify-between items-end">
+      <div className="mt-8 px-12 pb-10 flex justify-between items-end">
         <div>
-          <p className="text-xs text-gray-500">Date: {today}</p>
-          <div className="w-32 h-px bg-gray-300 mt-6" />
-          <p className="text-xs text-gray-500 mt-1">Authorized Signature</p>
+          <p className="text-xs text-gray-500 font-serif">Certificate ID: {certId}</p>
+          <p className="text-xs text-gray-500 font-serif mt-1">Date: {today}</p>
+          <div className="w-40 h-px bg-amber-500 mt-6" />
+          <p className="text-xs text-gray-600 font-serif mt-1">Authorized Signature</p>
         </div>
         <div className="text-right">
-          <div className="w-12 h-12 border border-gray-300 flex items-center justify-center bg-white mb-1">
+          <div className="w-12 h-12 border border-amber-500 flex items-center justify-center bg-white mb-1">
             <span className="text-xs text-gray-400">QR</span>
           </div>
-          <p className="text-xs text-gray-400">Scan to verify</p>
+          <p className="text-xs text-gray-400 font-serif">Scan to verify</p>
         </div>
       </div>
     </div>
