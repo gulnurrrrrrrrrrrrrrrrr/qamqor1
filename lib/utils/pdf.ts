@@ -33,7 +33,7 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
 
   // ── Layout: fixed Y positions, no dynamic centering ───────────────────────
   // Everything is placed with known Y values. Footer is anchored to bottom.
-  const TOP = bm + 30;
+  const TOP = bm + 80;
 
   // Title
   doc.setFont("times", "bold");
