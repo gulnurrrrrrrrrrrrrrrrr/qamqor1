@@ -25,8 +25,6 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   doc.setLineWidth(0.5);
   doc.rect(borderMargin + 5, borderMargin + 5, pageWidth - (borderMargin + 5) * 2, pageHeight - (borderMargin + 5) * 2);
 
-  let y = MARGIN;
-
   // Watermark logo (low opacity)
   doc.setGState(new (doc as any).GState({ opacity: 0.03 }));
   doc.setFont("times", "bold");
@@ -35,18 +33,46 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   doc.text("Q", centerX, pageHeight / 2 + 60, { align: "center" });
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
+  // Parse content for sections
+  const sections = parseCvContent(content);
+  const fullName = sections.fullName || "";
+  const experience = sections.experience || [];
+  const skills = sections.skills || [];
+
+  // Calculate content height
+  let contentHeight = 35 + 25 + LINE_HEIGHT * 2 + 35; // Title + name + subtitle + spacing
+  if (skills.length > 0) {
+    contentHeight += LINE_HEIGHT + 20; // Skills header + spacing
+    const skillText = skills
+      .map(s => s.replace(/•/g, "").trim())
+      .filter(s => s)
+      .slice(0, 6)
+      .join(" • ");
+    const skillLines = doc.splitTextToSize(skillText, maxWidth);
+    contentHeight += skillLines.length * LINE_HEIGHT;
+  }
+  if (experience.length > 0) {
+    contentHeight += LINE_HEIGHT; // Experience header
+    contentHeight += Math.min(experience.slice(0, 3).filter(e => {
+      const clean = e.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
+      return clean && clean.length < 80;
+    }).length, 3) * LINE_HEIGHT;
+  }
+
+  // Calculate vertical centering
+  const headerHeight = MARGIN;
+  const footerHeight = 70;
+  const availableHeight = pageHeight - headerHeight - footerHeight - MARGIN * 2;
+  const startY = headerHeight + (availableHeight - contentHeight) / 2;
+
+  let y = startY;
+
   // Title
   doc.setFont("times", "bold");
   doc.setFontSize(TITLE_SIZE);
   doc.setTextColor(51, 51, 51);
   doc.text("CERTIFICATE OF VERIFICATION", centerX, y, { align: "center" });
   y += 35;
-
-  // Parse content for sections
-  const sections = parseCvContent(content);
-  const fullName = sections.fullName || "";
-  const experience = sections.experience || [];
-  const skills = sections.skills || [];
 
   // Big name centered
   doc.setFont("times", "bold");
