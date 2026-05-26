@@ -20,10 +20,12 @@
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.0",
+    "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.400.0",
     "next": "^14.2.0",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "react-qr-code": "^2.0.21"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

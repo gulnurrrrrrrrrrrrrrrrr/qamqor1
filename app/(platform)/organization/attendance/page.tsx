@@ -6,10 +6,13 @@ import { RoleShell } from "@/components/dashboard/RoleShell";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { Can } from "@/components/auth/Can";
-import { ActionFeedback, ResultBox } from "@/components/ui/ActionFeedback";
+import { ActionFeedback } from "@/components/ui/ActionFeedback";
+import { QrCodeDisplay } from "@/components/attendance/QrCodeDisplay";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api/client";
 import type { Event } from "@/lib/types";
+
+type QrData = { eventTitle: string; qrToken: string; checkInUrl: string };
 
 export default function OrgAttendancePage() {
   const { user } = useAuth();
@@ -22,7 +25,7 @@ export default function OrgAttendancePage() {
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [qrSuccess, setQrSuccess] = useState<string | null>(null);
   const [geoSuccess, setGeoSuccess] = useState<string | null>(null);
-  const [qrResult, setQrResult] = useState("");
+  const [qrData, setQrData] = useState<QrData | null>(null);
   const [reviewList, setReviewList] = useState<{ id: string; volunteer: string; event: string; status: string; trust: number }[]>([]);
   const [showReview, setShowReview] = useState(false);
 
@@ -46,10 +49,15 @@ export default function OrgAttendancePage() {
     setQrLoading(true);
     setQrError(null);
     setQrSuccess(null);
+    setQrData(null);
     try {
       const eventId = pickEventId();
       const res = await api.generateQr(eventId);
-      setQrResult(`Event: ${res.eventTitle}\nToken: ${res.qrToken}\nVolunteers scan or enter this token at check-in.`);
+      setQrData({
+        eventTitle: res.eventTitle,
+        qrToken: res.qrToken,
+        checkInUrl: res.checkInUrl,
+      });
       setQrSuccess(`QR generated for ${res.eventTitle}`);
     } catch (e) {
       setQrError(e instanceof Error ? e.message : "Failed to generate QR");
@@ -105,7 +113,13 @@ export default function OrgAttendancePage() {
               {qrLoading ? "Generating…" : "Generate"}
             </Button>
             <ActionFeedback loading={qrLoading} error={qrError} success={qrSuccess} />
-            <ResultBox content={qrResult} label="QR Code" />
+            {qrData && (
+              <QrCodeDisplay
+                eventTitle={qrData.eventTitle}
+                qrToken={qrData.qrToken}
+                checkInUrl={qrData.checkInUrl}
+              />
+            )}
           </Panel>
         </Can>
         <Can permission="attendance.verify">
