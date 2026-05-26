@@ -106,7 +106,11 @@ export default function AISuitePage() {
               )}
             </div>
             <ActionFeedback loading={cvLoading} error={cvError} success={cvContent && !cvLoading ? "CV generated successfully" : null} />
-            {cvContent && <CvPreview content={cvContent} />}
+            {cvContent && (
+              <div className="transform scale-50 origin-top w-[200%] -ml-[50%]">
+                <CvPreview content={cvContent} />
+              </div>
+            )}
           </Panel>
         </Can>
         <Can permission="ai.motivation">

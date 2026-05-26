@@ -11,7 +11,7 @@ const LINE_HEIGHT = 16;
  * Renders CV into a premium certificate PDF.
  */
 export function downloadCvPdf(content: string, filename = "certificate.pdf") {
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const centerX = pageWidth / 2;
@@ -61,7 +61,7 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
 
   // Calculate vertical centering
   const headerHeight = MARGIN;
-  const footerHeight = 70;
+  const footerHeight = 80;
   const availableHeight = pageHeight - headerHeight - footerHeight - MARGIN * 2;
   const startY = headerHeight + (availableHeight - contentHeight) / 2;
 
@@ -133,26 +133,26 @@ export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   }
 
   // Footer section
-  const footerY = pageHeight - MARGIN - 70;
+  const footerY = pageHeight - MARGIN - 80;
 
-  // Certificate ID
+  // Certificate ID - centered
   const certId = "QCP-" + Date.now().toString().slice(-8);
   doc.setFont("times", "normal");
   doc.setFontSize(9);
   doc.setTextColor(128, 128, 128);
-  doc.text(`Certificate ID: ${certId}`, MARGIN, footerY);
+  doc.text(`Certificate ID: ${certId}`, centerX, footerY, { align: "center" });
 
-  // Date
+  // Date - centered
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-  doc.text(`Date: ${today}`, MARGIN, footerY + 20);
+  doc.text(`Date: ${today}`, centerX, footerY + 20, { align: "center" });
 
-  // Signature line
+  // Signature line - centered
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(1);
-  doc.line(MARGIN, footerY + 55, MARGIN + 160, footerY + 55);
+  doc.line(centerX - 80, footerY + 55, centerX + 80, footerY + 55);
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
-  doc.text("Authorized Signature", MARGIN + 80, footerY + 68, { align: "center" });
+  doc.text("Authorized Signature", centerX, footerY + 68, { align: "center" });
 
   // QR Code (bottom right)
   const qrSize = 50;
