@@ -1,181 +1,164 @@
 import { jsPDF } from "jspdf";
 
-const MARGIN = 60;
-const TITLE_SIZE = 18;
-const NAME_SIZE = 28;
-const SUBTITLE_SIZE = 11;
-const BODY_SIZE = 10;
-const LINE_HEIGHT = 14;
+const MARGIN = 50;
 
-/**
- * Renders CV into a premium certificate PDF.
- */
 export function downloadCvPdf(content: string, filename = "certificate.pdf") {
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const centerX = pageWidth / 2;
-  const maxWidth = pageWidth - MARGIN * 2;
+  const maxWidth = pageWidth - MARGIN * 2 - 40;
 
-  // Gold border
-  const borderMargin = 25;
+  // ── Gold double border ──────────────────────────────────────────────────────
+  const bm = 20;
   doc.setDrawColor(212, 175, 55);
-  doc.setLineWidth(2);
-  doc.rect(borderMargin, borderMargin, pageWidth - borderMargin * 2, pageHeight - borderMargin * 2);
-  doc.setLineWidth(0.5);
-  doc.rect(borderMargin + 5, borderMargin + 5, pageWidth - (borderMargin + 5) * 2, pageHeight - (borderMargin + 5) * 2);
+  doc.setLineWidth(3);
+  doc.rect(bm, bm, pageWidth - bm * 2, pageHeight - bm * 2);
+  doc.setLineWidth(0.8);
+  doc.rect(bm + 6, bm + 6, pageWidth - (bm + 6) * 2, pageHeight - (bm + 6) * 2);
 
-  // Watermark logo (low opacity)
-  doc.setGState(new (doc as any).GState({ opacity: 0.03 }));
+  // ── Watermark "Q" ──────────────────────────────────────────────────────────
+  doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
   doc.setFont("times", "bold");
-  doc.setFontSize(120);
+  doc.setFontSize(200);
   doc.setTextColor(212, 175, 55);
-  doc.text("Q", centerX, pageHeight / 2 + 60, { align: "center" });
+  doc.text("Q", centerX, pageHeight / 2 + 70, { align: "center" });
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
-  // Parse content for sections
+  // ── Parse content ──────────────────────────────────────────────────────────
   const sections = parseCvContent(content);
-  const fullName = sections.fullName || "";
+  const fullName  = sections.fullName  || "";
+  const skills    = sections.skills    || [];
   const experience = sections.experience || [];
-  const skills = sections.skills || [];
 
-  // Calculate content height
-  let contentHeight = 30 + 20 + LINE_HEIGHT * 2 + 25; // Title + name + subtitle + spacing
-  if (skills.length > 0) {
-    contentHeight += LINE_HEIGHT + 15; // Skills header + spacing
-    const skillText = skills
-      .map(s => s.replace(/•/g, "").trim())
-      .filter(s => s)
-      .slice(0, 6)
-      .join(" • ");
-    const skillLines = doc.splitTextToSize(skillText, maxWidth);
-    contentHeight += skillLines.length * LINE_HEIGHT;
-  }
-  if (experience.length > 0) {
-    contentHeight += LINE_HEIGHT; // Experience header
-    contentHeight += Math.min(experience.slice(0, 3).filter(e => {
-      const clean = e.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
-      return clean && clean.length < 80;
-    }).length, 3) * LINE_HEIGHT;
-  }
-
-  // Calculate vertical centering
-  const headerHeight = MARGIN;
-  const footerHeight = 70;
-  const availableHeight = pageHeight - headerHeight - footerHeight - MARGIN * 2;
-  const startY = headerHeight + (availableHeight - contentHeight) / 2;
-
-  let y = startY;
+  // ── Layout: fixed Y positions, no dynamic centering ───────────────────────
+  // Everything is placed with known Y values. Footer is anchored to bottom.
+  const TOP = bm + 30;
 
   // Title
   doc.setFont("times", "bold");
-  doc.setFontSize(TITLE_SIZE);
-  doc.setTextColor(51, 51, 51);
-  doc.text("CERTIFICATE OF VERIFICATION", centerX, y, { align: "center" });
-  y += 30;
+  doc.setFontSize(16);
+  doc.setTextColor(60, 60, 60);
+  doc.text("CERTIFICATE OF VERIFICATION", centerX, TOP, { align: "center" });
 
-  // Big name centered
+  // Decorative line under title
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(0.8);
+  doc.line(centerX - 120, TOP + 8, centerX + 120, TOP + 8);
+
+  // Name
   doc.setFont("times", "bold");
-  doc.setFontSize(NAME_SIZE);
-  doc.setTextColor(0, 0, 0);
-  doc.text(fullName, centerX, y, { align: "center" });
-  y += 20;
+  doc.setFontSize(32);
+  doc.setTextColor(10, 10, 10);
+  doc.text(fullName, centerX, TOP + 42, { align: "center" });
 
   // Subtitle
-  doc.setFont("times", "normal");
-  doc.setFontSize(SUBTITLE_SIZE);
-  doc.setTextColor(80, 80, 80);
-  doc.text("This certifies that the above-named individual has demonstrated verified", centerX, y, { align: "center" });
-  y += LINE_HEIGHT;
-  doc.text("professional competency through the Qamqor Social Capital Passport.", centerX, y, { align: "center" });
-  y += 25;
+  doc.setFont("times", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(90, 90, 90);
+  doc.text(
+    "This certifies that the above-named individual has demonstrated verified professional competency",
+    centerX, TOP + 65, { align: "center", maxWidth }
+  );
+  doc.text(
+    "through the Qamqor Social Capital Passport.",
+    centerX, TOP + 78, { align: "center" }
+  );
 
-  // Skills (short bullets)
+  // Divider
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(0.5);
+  doc.line(centerX - 180, TOP + 90, centerX + 180, TOP + 90);
+
+  // ── Verified Skills ────────────────────────────────────────────────────────
+  let y = TOP + 110;
+
   if (skills.length > 0) {
     doc.setFont("times", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(51, 51, 51);
+    doc.setTextColor(50, 50, 50);
     doc.text("Verified Skills", centerX, y, { align: "center" });
-    y += LINE_HEIGHT;
+    y += 14;
+
     doc.setFont("times", "normal");
-    doc.setFontSize(BODY_SIZE);
+    doc.setFontSize(9.5);
     doc.setTextColor(80, 80, 80);
     const skillText = skills
       .map(s => s.replace(/•/g, "").trim())
-      .filter(s => s)
+      .filter(Boolean)
       .slice(0, 6)
-      .join(" • ");
-    const lines = doc.splitTextToSize(skillText, maxWidth);
-    for (const line of lines) {
+      .join("  •  ");
+    const skillLines = doc.splitTextToSize(skillText, maxWidth);
+    for (const line of skillLines) {
       doc.text(line, centerX, y, { align: "center" });
-      y += LINE_HEIGHT;
+      y += 13;
     }
-    y += 15;
+    y += 10;
   }
 
-  // Experience (short bullets)
-  if (experience.length > 0) {
+  // ── Key Experience ─────────────────────────────────────────────────────────
+  const validExp = experience
+    .slice(0, 6)
+    .map(e => e.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim())
+    .filter(e => e && e.length < 100);
+
+  if (validExp.length > 0) {
     doc.setFont("times", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(51, 51, 51);
+    doc.setTextColor(50, 50, 50);
     doc.text("Key Experience", centerX, y, { align: "center" });
-    y += LINE_HEIGHT;
+    y += 14;
+
     doc.setFont("times", "normal");
-    doc.setFontSize(BODY_SIZE);
+    doc.setFontSize(9.5);
     doc.setTextColor(80, 80, 80);
-    for (const exp of experience.slice(0, 3)) {
-      const cleanExp = exp.replace(/^\d+\.\s*/, "").replace(/•/g, "").trim();
-      if (cleanExp && cleanExp.length < 80) {
-        doc.text(`• ${cleanExp}`, centerX, y, { align: "center" });
-        y += LINE_HEIGHT;
-      }
+    for (const exp of validExp) {
+      doc.text(`• ${exp}`, centerX, y, { align: "center" });
+      y += 13;
     }
   }
 
-  // Footer section
-  const footerY = pageHeight - MARGIN - 70;
+  // ── Footer — anchored to bottom ────────────────────────────────────────────
+  const footerY = pageHeight - bm - 65;
 
-  // Certificate ID - centered
-  const certId = "QCP-" + Date.now().toString().slice(-8);
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(128, 128, 128);
-  doc.text(`Certificate ID: ${certId}`, centerX, footerY, { align: "center" });
-
-  // Date - centered
-  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-  doc.text(`Date: ${today}`, centerX, footerY + 18, { align: "center" });
-
-  // Signature line - centered
+  // Signature (left side)
+  const sigX = MARGIN + 20;
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(1);
-  doc.line(centerX - 80, footerY + 45, centerX + 80, footerY + 45);
-  doc.setFontSize(9);
+  doc.line(sigX, footerY + 8, sigX + 130, footerY + 8);
+  doc.setFont("times", "normal");
+  doc.setFontSize(8.5);
   doc.setTextColor(80, 80, 80);
-  doc.text("Authorized Signature", centerX, footerY + 58, { align: "center" });
+  doc.text("Authorized Signature", sigX + 65, footerY + 20, { align: "center" });
 
-  // QR Code (bottom right, near footer content)
-  const qrSize = 48;
-  const qrX = pageWidth - MARGIN - qrSize - 10;
-  const qrY = footerY - 5;
+  // Certificate ID + Date (center)
+  const certId = "QCP-" + Date.now().toString().slice(-8);
+  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  doc.setFont("times", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Certificate ID: ${certId}`, centerX, footerY, { align: "center" });
+  doc.text(`Date: ${today}`, centerX, footerY + 14, { align: "center" });
+
+  // QR box (right side)
+  const qrSize = 44;
+  const qrX = pageWidth - MARGIN - qrSize - 20;
+  const qrY = footerY - 14;
   doc.setDrawColor(212, 175, 55);
   doc.setLineWidth(1);
   doc.rect(qrX, qrY, qrSize, qrSize);
   doc.setFontSize(7);
-  doc.setTextColor(128, 128, 128);
+  doc.setTextColor(150, 150, 150);
   doc.text("Scan to verify", qrX + qrSize / 2, qrY + qrSize + 10, { align: "center" });
 
   doc.save(filename);
 }
 
 function parseCvContent(content: string) {
-  const sections: { fullName: string; email: string; summary: string[]; experience: string[]; skills: string[]; certifications: string[] } = {
-    fullName: "",
-    email: "",
-    summary: [],
-    experience: [],
-    skills: [],
-    certifications: []
+  const sections = {
+    fullName: "", email: "",
+    summary: [] as string[], experience: [] as string[],
+    skills: [] as string[], certifications: [] as string[],
   };
   const lines = content.split("\n");
   let currentSection = "";
@@ -183,32 +166,21 @@ function parseCvContent(content: string) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("─") || trimmed.startsWith("═")) continue;
-
     const upper = trimmed.toUpperCase();
-    if (upper.includes("FULL NAME")) {
-      currentSection = "fullName";
-    } else if (upper.includes("PROFESSIONAL SUMMARY")) {
-      currentSection = "summary";
-    } else if (upper.includes("VOLUNTEER EXPERIENCE")) {
-      currentSection = "experience";
-    } else if (upper.includes("SKILLS")) {
-      currentSection = "skills";
-    } else if (upper.includes("CERTIFICATIONS")) {
-      currentSection = "certifications";
-    } else if (currentSection === "fullName" && !sections.fullName) {
-      sections.fullName = trimmed;
-    } else if (currentSection === "fullName" && trimmed.toLowerCase().startsWith("email:")) {
-      sections.email = trimmed.replace(/email:\s*/i, "");
-    } else if (currentSection === "summary") {
-      sections.summary.push(trimmed);
-    } else if (currentSection === "experience") {
-      sections.experience.push(trimmed);
-    } else if (currentSection === "skills") {
-      sections.skills.push(trimmed);
-    } else if (currentSection === "certifications") {
-      sections.certifications.push(trimmed);
-    }
-  }
 
+    if (upper.includes("FULL NAME"))              currentSection = "fullName";
+    else if (upper.includes("PROFESSIONAL SUMMARY")) currentSection = "summary";
+    else if (upper.includes("VOLUNTEER EXPERIENCE")) currentSection = "experience";
+    else if (upper.includes("SKILLS"))            currentSection = "skills";
+    else if (upper.includes("CERTIFICATIONS"))    currentSection = "certifications";
+    else if (currentSection === "fullName" && !sections.fullName)
+      sections.fullName = trimmed;
+    else if (currentSection === "fullName" && trimmed.toLowerCase().startsWith("email:"))
+      sections.email = trimmed.replace(/email:\s*/i, "");
+    else if (currentSection === "summary")        sections.summary.push(trimmed);
+    else if (currentSection === "experience")     sections.experience.push(trimmed);
+    else if (currentSection === "skills")         sections.skills.push(trimmed);
+    else if (currentSection === "certifications") sections.certifications.push(trimmed);
+  }
   return sections;
 }
