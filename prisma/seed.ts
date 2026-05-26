@@ -121,6 +121,7 @@ async function main() {
         maxParticipants: e.max,
         featured: e.featured,
         skills: e.skills,
+        moderationStatus: "APPROVED",
       },
     });
     events.push(created);

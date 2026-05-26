@@ -15,7 +15,6 @@ import {
   Shield,
   Building2,
   Settings,
-  Flag,
   AlertTriangle,
 } from "lucide-react";
 import type { Role } from "./types";
@@ -51,11 +50,13 @@ const organizationNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { href: "/admin", label: "System", icon: Shield },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/organizations", label: "Organizations", icon: Building2 },
   { href: "/admin/events", label: "Events", icon: Calendar },
-  { href: "/admin/fraud", label: "Fraud Reports", icon: AlertTriangle },
-  { href: "/admin/reports", label: "Reports", icon: Flag },
+  { href: "/admin/applications", label: "Applications", icon: FileText },
+  { href: "/admin/attendance", label: "Attendance", icon: QrCode },
+  { href: "/admin/fraud", label: "Fraud & Reports", icon: AlertTriangle },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

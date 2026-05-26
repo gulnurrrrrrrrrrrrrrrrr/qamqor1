@@ -8,6 +8,9 @@ export interface EventFilters {
   verification?: string;
   featured?: boolean;
   organizationId?: string;
+  /** Public browse: only approved events */
+  approvedOnly?: boolean;
+  moderationStatus?: string;
 }
 
 export async function listEvents(filters: EventFilters = {}) {
@@ -15,6 +18,8 @@ export async function listEvents(filters: EventFilters = {}) {
 
   if (filters.featured) where.featured = true;
   if (filters.organizationId) where.organizationId = filters.organizationId;
+  if (filters.approvedOnly) where.moderationStatus = "APPROVED";
+  if (filters.moderationStatus) where.moderationStatus = filters.moderationStatus.toUpperCase();
 
   if (filters.mode && filters.mode !== "All") {
     where.mode = filters.mode.toUpperCase();

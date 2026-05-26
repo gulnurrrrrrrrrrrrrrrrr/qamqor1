@@ -3,6 +3,7 @@ import { getEventById, updateEvent, deleteEvent } from "@/lib/services/events";
 import { prisma, ensureDatabaseConnection } from "@/lib/prisma";
 import { jsonOk, jsonError, handleApiError } from "@/lib/api/response";
 import { logApiRoute, parseJsonBody } from "@/lib/api/route-utils";
+import { logAdminAction } from "@/lib/services/admin-audit";
 
 type Params = { params: { id: string } };
 
@@ -65,6 +66,9 @@ export async function DELETE(req: Request, { params }: Params) {
       return jsonError("Forbidden", 403);
     }
     await deleteEvent(params.id);
+    if (user.role === "admin") {
+      await logAdminAction(user.id, "event.delete", "Event", params.id);
+    }
     return jsonOk({ ok: true });
   } catch (err) {
     return handleApiError(err);

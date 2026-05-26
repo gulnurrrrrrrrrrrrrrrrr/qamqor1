@@ -10,6 +10,7 @@ import { CreateEventModal } from "@/components/events/CreateEventModal";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api/client";
 import { ActionFeedback } from "@/components/ui/ActionFeedback";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { Event } from "@/lib/types";
 
 export default function OrgEventsPage() {
@@ -105,8 +106,9 @@ export default function OrgEventsPage() {
             <Panel key={e.id} className="flex items-center justify-between !py-4">
               <div className="min-w-0 pr-4">
                 <p className="text-sm text-white">{e.title}</p>
-                <p className="text-xs text-ink-400 mt-0.5">
+                <p className="text-xs text-ink-400 mt-0.5 flex flex-wrap items-center gap-2">
                   {e.date} · {e.location} · {e.participants}/{e.maxParticipants} volunteers
+                  {e.moderationStatus && <StatusBadge status={e.moderationStatus} />}
                 </p>
                 {e.description && (
                   <p className="text-xs text-ink-500 mt-1 line-clamp-2">{e.description}</p>

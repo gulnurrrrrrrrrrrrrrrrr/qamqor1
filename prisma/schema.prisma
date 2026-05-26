@@ -36,6 +36,12 @@ enum ApplicationStatus {
   FLAGGED
 }
 
+enum EventModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum FraudSeverity {
   LOW
   MEDIUM
@@ -63,16 +69,18 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  organization  Organization?
-  applications  Application[]
-  notifications Notification[]
-  certificates  Certificate[]
-  timeline      TimelineEntry[]
-  bookmarks     Bookmark[]
-  sessions      Session[]
-  fraudReports  FraudReport[] @relation("ReportedUser")
-  attendanceRecords AttendanceRecord[]
-  aiGenerations     AiGeneration[]
+  organization          Organization?
+  applications          Application[]
+  notifications         Notification[]
+  certificates          Certificate[]
+  timeline              TimelineEntry[]
+  bookmarks             Bookmark[]
+  sessions              Session[]
+  fraudReports          FraudReport[] @relation("ReportedUser")
+  assignedFraudReports  FraudReport[] @relation("AssignedFraud")
+  attendanceRecords     AttendanceRecord[]
+  aiGenerations         AiGeneration[]
+  adminActions          AdminAction[]
 }
 
 model Organization {
@@ -81,6 +89,8 @@ model Organization {
   logo        String
   description String?
   verified    Boolean  @default(false)
+  suspended   Boolean  @default(false)
+  rejected    Boolean  @default(false)
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   events      Event[]
@@ -91,31 +101,37 @@ model Organization {
 }
 
 model Event {
-  id              String           @id @default(cuid())
-  organizationId  String
-  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  title           String
-  description     String?
-  location        String
-  mode            EventMode
-  verification    VerificationType
-  trustRequired   Int
-  eventDate       DateTime
-  hours           Int
-  maxParticipants Int
-  featured        Boolean          @default(false)
-  skills          String[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                String                @id @default(cuid())
+  organizationId    String
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title             String
+  description       String?
+  location          String
+  mode              EventMode
+  verification      VerificationType
+  trustRequired     Int
+  eventDate         DateTime
+  hours             Int
+  maxParticipants   Int
+  featured          Boolean               @default(false)
+  moderationStatus  EventModerationStatus @default(PENDING)
+  flagged           Boolean               @default(false)
+  rejectionReason   String?
+  skills            String[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   applications Application[]
   bookmarks    Bookmark[]
   timeline     TimelineEntry[]
   attendance   EventAttendance?
   checkIns     AttendanceRecord[]
+  fraudReports FraudReport[]
 
   @@index([organizationId])
   @@index([featured])
+  @@index([moderationStatus])
+  @@index([flagged])
 }
 
 model EventAttendance {
@@ -142,6 +158,7 @@ model AttendanceRecord {
 
   @@unique([userId, eventId])
   @@index([eventId])
+  @@index([userId])
 }
 
 model AiGeneration {
@@ -167,6 +184,7 @@ model Application {
 
   @@unique([userId, eventId])
   @@index([eventId])
+  @@index([status])
 }
 
 model Notification {
@@ -232,17 +250,41 @@ model Session {
 model FraudReport {
   id             String        @id @default(cuid())
   type           String
-  description    String?
+  description    String?       @db.Text
   severity       FraudSeverity @default(MEDIUM)
   status         FraudStatus   @default(OPEN)
+  adminNotes     String?       @db.Text
   reportedUserId String?
   reportedUser   User?         @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
   organizationId String?
   organization   Organization? @relation("ReportedOrg", fields: [organizationId], references: [id], onDelete: SetNull)
+  eventId        String?
+  event          Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  assignedToId   String?
+  assignedTo     User?         @relation("AssignedFraud", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status])
+  @@index([assignedToId])
 }
 
 model PlatformSetting {
   key   String @id
   value String
+}
+
+model AdminAction {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([targetType, targetId])
 }

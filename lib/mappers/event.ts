@@ -41,6 +41,10 @@ export function toAppEvent(event: EventWithOrg): AppEvent {
     date: formatEventDate(event.eventDate),
     hours: event.hours,
     featured: event.featured,
+    moderationStatus: event.moderationStatus.toLowerCase() as AppEvent["moderationStatus"],
+    flagged: event.flagged,
+    rejectionReason: event.rejectionReason,
+    organizationId: event.organizationId,
   };
 }
 

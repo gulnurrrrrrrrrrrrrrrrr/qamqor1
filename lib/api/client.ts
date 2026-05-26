@@ -104,13 +104,111 @@ export const api = {
       body: JSON.stringify(program ? { program } : {}),
     }),
 
-  adminStats: () => request<{ stats: { users: number; organizations: number; events: number; fraudReports: number; suspended: number } }>("/api/admin/stats"),
-  adminUsers: () => request<{ users: { id: string; name: string; role: string; status: string }[] }>("/api/admin/users"),
-  adminOrgs: () => request<{ organizations: { id: string; name: string; status: string }[] }>("/api/admin/organizations"),
-  adminFraud: () => request<{ reports: { id: string; type: string; user: string; severity: string }[] }>("/api/admin/fraud"),
-  investigateFraud: (id: string) => request<{ report: { id: string; status: string } }>(`/api/admin/fraud/${id}`, { method: "PATCH" }),
+  adminStats: () =>
+    request<{
+      stats: {
+        users: number;
+        organizations: number;
+        events: number;
+        fraudReports: number;
+        suspended: number;
+        pendingEvents: number;
+      };
+    }>("/api/admin/stats"),
+
+  adminUsers: (params?: Record<string, string>) => {
+    const q = new URLSearchParams(params).toString();
+    return request<{
+      users: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        status: string;
+        trustScore: number;
+        impactHours: number;
+      }[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/admin/users${q ? `?${q}` : ""}`);
+  },
+  adminUserDetail: (id: string) => request<{ user: unknown }>(`/api/admin/users/${id}`),
   suspendUser: (userId: string, suspended: boolean) =>
     request<{ ok: boolean }>("/api/admin/users", { method: "PATCH", body: JSON.stringify({ userId, suspended }) }),
+  changeUserRole: (userId: string, role: string) =>
+    request<{ ok: boolean }>("/api/admin/users", { method: "PATCH", body: JSON.stringify({ userId, role }) }),
+  deleteUser: (id: string) => request<{ ok: boolean }>(`/api/admin/users/${id}`, { method: "DELETE" }),
+
+  adminOrgs: (params?: Record<string, string>) => {
+    const q = new URLSearchParams(params).toString();
+    return request<{ organizations: unknown[]; total: number; page: number; pages: number }>(
+      `/api/admin/organizations${q ? `?${q}` : ""}`
+    );
+  },
+  adminOrgDetail: (id: string) => request<{ organization: unknown }>(`/api/admin/organizations/${id}`),
+  orgAction: (organizationId: string, action: string, data?: Record<string, unknown>) =>
+    request<{ ok: boolean }>("/api/admin/organizations", {
+      method: "PATCH",
+      body: JSON.stringify({ organizationId, action, ...data }),
+    }),
+
+  adminEvents: (params?: Record<string, string>) => {
+    const q = new URLSearchParams(params).toString();
+    return request<{ events: Event[]; total: number; page: number; pages: number }>(
+      `/api/admin/events${q ? `?${q}` : ""}`
+    );
+  },
+  moderateEvent: (eventId: string, action: string, reason?: string) =>
+    request<{ event: Event }>("/api/admin/events", {
+      method: "PATCH",
+      body: JSON.stringify({ eventId, action, reason }),
+    }),
+
+  adminFraud: (params?: Record<string, string>) => {
+    const q = new URLSearchParams(params).toString();
+    return request<{ reports: unknown[]; total: number; page: number; pages: number }>(
+      `/api/admin/fraud${q ? `?${q}` : ""}`
+    );
+  },
+  updateFraud: (id: string, body: { status?: string; adminNotes?: string; assignedToId?: string | null }) =>
+    request<{ report: unknown }>(`/api/admin/fraud/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  adminApplications: (params?: Record<string, string>) => {
+    const q = new URLSearchParams(params).toString();
+    return request<{ applications: unknown[]; total: number; page: number; pages: number }>(
+      `/api/admin/applications${q ? `?${q}` : ""}`
+    );
+  },
+  overrideApplication: (applicationId: string, status: string) =>
+    request<{ application: unknown }>("/api/admin/applications", {
+      method: "PATCH",
+      body: JSON.stringify({ applicationId, status }),
+    }),
+
+  adminAttendance: (params?: Record<string, string>) => {
+    const q = new URLSearchParams(params).toString();
+    return request<{ records: unknown[]; eventConfigs: unknown[] }>(`/api/admin/attendance${q ? `?${q}` : ""}`);
+  },
+
+  adminAnalytics: () =>
+    request<{
+      totals: unknown;
+      series: Record<string, { date: string; count: number }[]>;
+    }>("/api/admin/analytics"),
+
+  adminSettings: () => request<{ settings: { key: string; value: string }[] }>("/api/admin/settings"),
+  updateAdminSettings: (settings: { key: string; value: string }[]) =>
+    request<{ settings: { key: string; value: string }[] }>("/api/admin/settings", {
+      method: "PATCH",
+      body: JSON.stringify({ settings }),
+    }),
+
+  adminAudit: () => request<{ actions: unknown[] }>("/api/admin/audit"),
+
   verifyOrg: (organizationId: string) =>
-    request<{ ok: boolean }>("/api/admin/organizations", { method: "PATCH", body: JSON.stringify({ organizationId, action: "verify" }) }),
+    request<{ ok: boolean }>("/api/admin/organizations", {
+      method: "PATCH",
+      body: JSON.stringify({ organizationId, action: "verify" }),
+    }),
 };

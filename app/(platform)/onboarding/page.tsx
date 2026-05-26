@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Heart, Building2, Shield } from "lucide-react";
+import { Heart, Building2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import type { Role } from "@/lib/auth/types";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/Button";
 const roles: { id: Role; title: string; desc: string; icon: typeof Heart }[] = [
   { id: "volunteer", title: "Volunteer", desc: "Discover opportunities and build verified social capital.", icon: Heart },
   { id: "organization", title: "Organization", desc: "Create events and manage volunteers.", icon: Building2 },
-  { id: "admin", title: "Administrator", desc: "Moderate platform and manage users.", icon: Shield },
 ];
 
 function OnboardingContent() {

@@ -1,5 +1,6 @@
+import type { ApplicationStatus } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth/admin-guard";
-import { listUsersAdmin, adminUpdateUser } from "@/lib/services/admin";
+import { listApplicationsAdmin, adminOverrideApplication } from "@/lib/services/admin";
 import { jsonOk, jsonError, handleApiError } from "@/lib/api/response";
 import { logApiRoute, parseJsonBody } from "@/lib/api/route-utils";
 import { ensureDatabaseConnection } from "@/lib/prisma";
@@ -10,9 +11,9 @@ export async function GET(req: Request) {
     await ensureDatabaseConnection();
     await requireAdmin("users.manage");
     const { searchParams } = new URL(req.url);
-    const result = await listUsersAdmin({
+    const result = await listApplicationsAdmin({
+      status: searchParams.get("status") ?? undefined,
       search: searchParams.get("search") ?? undefined,
-      role: searchParams.get("role") ?? undefined,
       page: parseInt(searchParams.get("page") ?? "1", 10),
     });
     return jsonOk(result);
@@ -26,19 +27,13 @@ export async function PATCH(req: Request) {
   logApiRoute(req, { body });
   try {
     await ensureDatabaseConnection();
-    const admin = await requireAdmin("accounts.suspend");
-    const userId = typeof body.userId === "string" ? body.userId : "";
-    if (!userId) return jsonError("userId required", 400);
+    const admin = await requireAdmin("users.manage");
+    const applicationId = typeof body.applicationId === "string" ? body.applicationId : "";
+    const status = typeof body.status === "string" ? body.status.toUpperCase() : "";
+    if (!applicationId || !status) return jsonError("applicationId and status required", 400);
 
-    if (typeof body.suspended === "boolean") {
-      await adminUpdateUser(admin.id, userId, { suspended: body.suspended });
-      return jsonOk({ ok: true });
-    }
-    if (typeof body.role === "string") {
-      await adminUpdateUser(admin.id, userId, { role: body.role as "volunteer" | "organization" });
-      return jsonOk({ ok: true });
-    }
-    return jsonError("suspended or role required", 400);
+    const application = await adminOverrideApplication(admin.id, applicationId, status as ApplicationStatus);
+    return jsonOk({ application });
   } catch (err) {
     return handleApiError(err);
   }

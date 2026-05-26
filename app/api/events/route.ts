@@ -9,12 +9,14 @@ export async function GET(req: Request) {
   try {
     await ensureDatabaseConnection();
     const { searchParams } = new URL(req.url);
+    const organizationId = searchParams.get("organizationId") ?? undefined;
     const events = await listEvents({
       search: searchParams.get("search") ?? undefined,
       mode: searchParams.get("mode") ?? undefined,
       verification: searchParams.get("verification") ?? undefined,
       featured: searchParams.get("featured") === "true",
-      organizationId: searchParams.get("organizationId") ?? undefined,
+      organizationId,
+      approvedOnly: !organizationId && searchParams.get("all") !== "true",
     });
     return jsonOk({ events: events ?? [] });
   } catch (err) {

@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth/admin-guard";
-import { listOrganizationsAdmin, adminOrganizationAction } from "@/lib/services/admin";
+import { listEventsAdmin, moderateEvent } from "@/lib/services/admin";
 import { jsonOk, jsonError, handleApiError } from "@/lib/api/response";
 import { logApiRoute, parseJsonBody } from "@/lib/api/route-utils";
 import { ensureDatabaseConnection } from "@/lib/prisma";
@@ -8,11 +8,12 @@ export async function GET(req: Request) {
   logApiRoute(req);
   try {
     await ensureDatabaseConnection();
-    await requireAdmin("organizations.manage");
+    await requireAdmin("events.moderate");
     const { searchParams } = new URL(req.url);
-    const result = await listOrganizationsAdmin({
-      search: searchParams.get("search") ?? undefined,
+    const result = await listEventsAdmin({
       status: searchParams.get("status") ?? undefined,
+      flagged: searchParams.get("flagged") === "true",
+      search: searchParams.get("search") ?? undefined,
       page: parseInt(searchParams.get("page") ?? "1", 10),
     });
     return jsonOk(result);
@@ -26,17 +27,21 @@ export async function PATCH(req: Request) {
   logApiRoute(req, { body });
   try {
     await ensureDatabaseConnection();
-    const admin = await requireAdmin("organizations.verify");
-    const organizationId = typeof body.organizationId === "string" ? body.organizationId : "";
+    const admin = await requireAdmin("events.moderate");
+    const eventId = typeof body.eventId === "string" ? body.eventId : "";
     const action = typeof body.action === "string" ? body.action : "";
-    if (!organizationId || !action) return jsonError("organizationId and action required", 400);
+    if (!eventId || !action) return jsonError("eventId and action required", 400);
 
-    await adminOrganizationAction(admin.id, organizationId, action, {
-      name: typeof body.name === "string" ? body.name : undefined,
-      description: typeof body.description === "string" ? body.description : undefined,
-      logo: typeof body.logo === "string" ? body.logo : undefined,
-    });
-    return jsonOk({ ok: true });
+    const valid = ["approve", "reject", "flag", "unflag"];
+    if (!valid.includes(action)) return jsonError("Invalid action", 400);
+
+    const event = await moderateEvent(
+      admin.id,
+      eventId,
+      action as "approve" | "reject" | "flag" | "unflag",
+      typeof body.reason === "string" ? body.reason : undefined
+    );
+    return jsonOk({ event });
   } catch (err) {
     return handleApiError(err);
   }
