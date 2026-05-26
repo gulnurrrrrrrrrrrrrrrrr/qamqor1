@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { ApiError } from "@/lib/api/errors";
 import { prisma } from "@/lib/prisma";
 
 function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -12,17 +13,43 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+export function validateGeoCoordinates(latitude: number, longitude: number, radiusMeters?: number) {
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+    throw new ApiError(400, "Invalid latitude (must be between -90 and 90)");
+  }
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new ApiError(400, "Invalid longitude (must be between -180 and 180)");
+  }
+  if (radiusMeters != null) {
+    if (!Number.isFinite(radiusMeters) || radiusMeters < 10 || radiusMeters > 10_000) {
+      throw new ApiError(400, "Invalid radius (must be between 10 and 10000 meters)");
+    }
+  }
+}
+
 export async function getOrgEventIds(organizationId: string) {
-  const events = await prisma.event.findMany({ where: { organizationId }, select: { id: true, title: true } });
+  const events = await prisma.event.findMany({
+    where: { organizationId },
+    select: { id: true, title: true },
+  });
   return events;
 }
 
 export async function generateEventQr(organizationId: string, eventId?: string) {
+  if (eventId != null && typeof eventId !== "string") {
+    throw new ApiError(400, "Invalid eventId");
+  }
+
   const event = eventId
     ? await prisma.event.findFirst({ where: { id: eventId, organizationId } })
     : await prisma.event.findFirst({ where: { organizationId }, orderBy: { eventDate: "asc" } });
 
-  if (!event) throw new Error("No event found for this organization");
+  if (!event) {
+    throw new ApiError(
+      404,
+      eventId ? "Event not found for this organization" : "No event found for this organization. Create an event first."
+    );
+  }
 
   const attendance = await prisma.eventAttendance.upsert({
     where: { eventId: event.id },
@@ -42,8 +69,11 @@ export async function configureEventGeo(
   organizationId: string,
   input: { eventId: string; latitude: number; longitude: number; radiusMeters?: number }
 ) {
+  if (!input.eventId) throw new ApiError(400, "eventId is required");
+  validateGeoCoordinates(input.latitude, input.longitude, input.radiusMeters);
+
   const event = await prisma.event.findFirst({ where: { id: input.eventId, organizationId } });
-  if (!event) throw new Error("Event not found");
+  if (!event) throw new ApiError(404, "Event not found");
 
   const attendance = await prisma.eventAttendance.upsert({
     where: { eventId: event.id },
@@ -90,17 +120,19 @@ export async function listPendingAttendanceReviews(organizationId: string) {
 }
 
 export async function checkInWithQr(userId: string, qrToken: string) {
+  if (!qrToken?.trim()) throw new ApiError(400, "qrToken is required");
+
   const attendance = await prisma.eventAttendance.findUnique({
-    where: { qrToken },
+    where: { qrToken: qrToken.trim() },
     include: { event: true },
   });
-  if (!attendance) throw new Error("Invalid QR code");
+  if (!attendance) throw new ApiError(400, "Invalid QR code");
 
   const application = await prisma.application.findUnique({
     where: { userId_eventId: { userId, eventId: attendance.eventId } },
   });
   if (!application || !["ACCEPTED", "APPROVED", "REVIEWING"].includes(application.status)) {
-    throw new Error("You must be approved for this event before check-in");
+    throw new ApiError(400, "You must be approved for this event before check-in");
   }
 
   const record = await prisma.attendanceRecord.upsert({
@@ -119,24 +151,30 @@ export async function checkInWithQr(userId: string, qrToken: string) {
 }
 
 export async function checkInWithGeo(userId: string, eventId: string, latitude: number, longitude: number) {
+  if (!eventId) throw new ApiError(400, "eventId is required");
+  validateGeoCoordinates(latitude, longitude);
+
   const attendance = await prisma.eventAttendance.findUnique({
     where: { eventId },
     include: { event: { include: { organization: true } } },
   });
   if (!attendance?.geoLatitude || attendance.geoLongitude == null) {
-    throw new Error("Geo zone not configured for this event");
+    throw new ApiError(400, "Geo zone not configured for this event");
   }
 
   const distance = haversineMeters(latitude, longitude, attendance.geoLatitude, attendance.geoLongitude);
   if (distance > attendance.geoRadiusMeters) {
-    throw new Error(`Outside geofence (${Math.round(distance)}m away, max ${attendance.geoRadiusMeters}m)`);
+    throw new ApiError(
+      400,
+      `Outside geofence (${Math.round(distance)}m away, max ${attendance.geoRadiusMeters}m)`
+    );
   }
 
   const application = await prisma.application.findUnique({
     where: { userId_eventId: { userId, eventId } },
   });
   if (!application || !["ACCEPTED", "APPROVED", "REVIEWING"].includes(application.status)) {
-    throw new Error("You must be approved for this event before check-in");
+    throw new ApiError(400, "You must be approved for this event before check-in");
   }
 
   const record = await prisma.attendanceRecord.upsert({

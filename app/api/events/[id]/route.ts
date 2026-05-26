@@ -1,12 +1,15 @@
 import { requireApiUser } from "@/lib/auth/api-auth";
 import { getEventById, updateEvent, deleteEvent } from "@/lib/services/events";
-import { prisma } from "@/lib/prisma";
+import { prisma, ensureDatabaseConnection } from "@/lib/prisma";
 import { jsonOk, jsonError, handleApiError } from "@/lib/api/response";
+import { logApiRoute, parseJsonBody } from "@/lib/api/route-utils";
 
 type Params = { params: { id: string } };
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
+  logApiRoute(req, { body: { id: params.id } });
   try {
+    await ensureDatabaseConnection();
     const event = await getEventById(params.id);
     if (!event) return jsonError("Not found", 404);
     return jsonOk({ event });
@@ -16,8 +19,12 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
+  const body = await parseJsonBody(req);
+  logApiRoute(req, { body: { ...body, id: params.id } });
   try {
+    await ensureDatabaseConnection();
     const user = await requireApiUser(["organization", "admin"]);
+    logApiRoute(req, { body, user });
     const existing = await prisma.event.findUnique({
       where: { id: params.id },
       include: { organization: true },
@@ -27,23 +34,26 @@ export async function PATCH(req: Request, { params }: Params) {
       return jsonError("Forbidden", 403);
     }
 
-    const body = await req.json();
-    const event = await updateEvent(params.id, {
-      ...(body.title && { title: body.title }),
-      ...(body.location && { location: body.location }),
-      ...(body.mode && { mode: body.mode.toUpperCase() }),
-      ...(body.hours != null && { hours: Number(body.hours) }),
-      ...(body.featured != null && { featured: Boolean(body.featured) }),
-    });
+    const patch: Parameters<typeof updateEvent>[1] = {};
+    if (body.title) patch.title = String(body.title);
+    if (body.location) patch.location = String(body.location);
+    if (body.mode) patch.mode = String(body.mode).toUpperCase() as "ONLINE" | "OFFLINE" | "HYBRID";
+    if (body.hours != null) patch.hours = Number(body.hours);
+    if (body.featured != null) patch.featured = Boolean(body.featured);
+
+    const event = await updateEvent(params.id, patch);
     return jsonOk({ event });
   } catch (err) {
     return handleApiError(err);
   }
 }
 
-export async function DELETE(_req: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
+  logApiRoute(req, { body: { id: params.id } });
   try {
+    await ensureDatabaseConnection();
     const user = await requireApiUser(["organization", "admin"]);
+    logApiRoute(req, { user });
     const existing = await prisma.event.findUnique({ where: { id: params.id } });
     if (!existing) return jsonError("Not found", 404);
     if (user.role === "organization" && existing.organizationId !== user.organizationId) {

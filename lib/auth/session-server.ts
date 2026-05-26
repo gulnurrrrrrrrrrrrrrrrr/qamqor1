@@ -32,29 +32,44 @@ export async function destroySession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (token) {
-    await prisma.session.deleteMany({ where: { token } });
+    try {
+      await prisma.session.deleteMany({ where: { token } });
+    } catch (err) {
+      console.error("[Auth] destroySession db error", err);
+    }
     cookieStore.set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
     cookieStore.set("qamqor_role", "", { path: "/", maxAge: 0 });
   }
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE)?.value;
+    if (!token) return null;
 
-  const session = await prisma.session.findUnique({
-    where: { token },
-    include: { user: { include: { organization: true } } },
-  });
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: { user: { include: { organization: true } } },
+    });
 
-  if (!session || session.expiresAt < new Date()) {
-    if (session) await prisma.session.delete({ where: { id: session.id } });
-    return null;
+    if (!session || session.expiresAt < new Date()) {
+      if (session) {
+        try {
+          await prisma.session.delete({ where: { id: session.id } });
+        } catch (err) {
+          console.error("[Auth] expired session cleanup failed", err);
+        }
+      }
+      return null;
+    }
+
+    if (session.user.suspended) return null;
+    return toSessionUser(session.user);
+  } catch (err) {
+    console.error("[Auth] getSessionUser error", err);
+    throw err;
   }
-
-  if (session.user.suspended) return null;
-  return toSessionUser(session.user);
 }
 
 export async function requireSessionUser() {

@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getOrgAnalytics(organizationId: string) {
-  const [events, applications, org] = await Promise.all([
+  const [events, org] = await Promise.all([
     prisma.event.findMany({ where: { organizationId }, include: { applications: true } }),
-    prisma.application.count({ where: { event: { organizationId } } }),
     prisma.organization.findUnique({ where: { id: organizationId } }),
   ]);
 
@@ -21,9 +20,7 @@ export async function getOrgAnalytics(organizationId: string) {
     volunteers.length > 0
       ? (
           await prisma.user.aggregate({
-            where: {
-              id: { in: volunteers.map((v) => v.userId) },
-            },
+            where: { id: { in: volunteers.map((v) => v.userId) } },
             _avg: { trustScore: true },
           })
         )._avg.trustScore ?? 0
@@ -39,7 +36,14 @@ export async function getOrgAnalytics(organizationId: string) {
     verifiedHours,
     avgTrust: Math.round(avgTrust),
     fraudAlerts,
-    org,
+    org: org
+      ? {
+          name: org.name,
+          logo: org.logo,
+          description: org.description,
+          verified: org.verified,
+        }
+      : { name: "", logo: "", description: null, verified: false },
     eventPerformance: events.slice(0, 3).map((e) => {
       const accepted = e.applications.filter((a) => a.status === "ACCEPTED" || a.status === "APPROVED").length;
       const fill = e.maxParticipants > 0 ? Math.round((accepted / e.maxParticipants) * 100) : 0;
